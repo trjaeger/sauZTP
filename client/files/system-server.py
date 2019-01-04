@@ -28,8 +28,6 @@ import time
 from netconf import error, server, util
 from netconf import nsmap_add, NSMAP
 
-from lxml import etree
-
 nsmap_add("sys", "urn:ietf:params:xml:ns:yang:ietf-system")
 
 
@@ -61,7 +59,8 @@ class SystemServer(object):
 
     def nc_append_capabilities(self, capabilities):  # pylint: disable=W0613
         """The server should append any capabilities it supports to capabilities"""
-        util.subelm(capabilities, "capability").text = "urn:ietf:params:netconf:capability:xpath:1.0"
+        util.subelm(capabilities,
+                    "capability").text = "urn:ietf:params:netconf:capability:xpath:1.0"
         util.subelm(capabilities, "capability").text = NSMAP["sys"]
 
     def rpc_get(self, session, rpc, filter_or_none):  # pylint: disable=W0613
@@ -112,35 +111,6 @@ class SystemServer(object):
 
         return util.filter_results(rpc, data, filter_or_none)
 
-    def rpc_bootstrap(self, session, rpc, *params):  # pylint: disable=W0613
-        """Passed the filter element or None if not present"""
-        data = util.elm("nc:data")
-        #return util.elm("ok")
-
-        #if self.debug:
-        #print(etree.tounicode(rpc, pretty_print=True))
-        #print(etree.tounicode(rpc))
-
-        logging.info(etree.tounicode(rpc, pretty_print=True))
-
-        print(etree.tounicode(rpc, pretty_print=True))
-        dataElem = rpc.find("nc:bootstrap", namespaces=NSMAP)
-        onb = dataElem.find("nc:onboarding-information", namespaces=NSMAP)
-        handl= onb.find("nc:configuration", namespaces=NSMAP)
-        print(handl.text)
-
-        f = rpc.xpath("//nc:bootstrap/nc:onboarding-information/nc:configuration", namespaces=NSMAP )
-        print(f, type(f))
-        if not f:
-            data.append(util.leaf_elm("result", "RPC result string"))
-        else:
-            data.append(util.leaf_elm("result", f[0].text))
-
-
-        return util.filter_results(rpc, data, None)
-        #return util.filter_results(rpc, data, filter_or_none)
-
-
     def rpc_system_restart(self, session, rpc, *params):
         raise error.AccessDeniedAppError(rpc)
 
@@ -158,8 +128,7 @@ def main(*margs):
     parser.add_argument("--username", default="admin", help='Netconf username')
     args = parser.parse_args(*margs)
 
-    #logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
-    logging.basicConfig(level=logging.DEBUG if args.debug else logging.WARNING)
+    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
 
     args.password = parse_password_arg(args.password)
     host_key = os.path.dirname(__file__) + "/server-key"
