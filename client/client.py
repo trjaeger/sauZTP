@@ -33,8 +33,8 @@ onboard.append(util.leaf_elm("configuration", "tbd"))
 onboard.append(util.leaf_elm("post-configuration-script", "post.py"))
 
 #print (type(data))
-#print(etree.tounicode(data))
-#exit()
+print(etree.tounicode(data, pretty_print=True))
+exit()
 
 session = NetconfSSHSession("172.17.0.2", "8300", "admin", "admin", debug=True)
 #reply = session.get_config()
