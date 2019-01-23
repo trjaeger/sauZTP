@@ -1,1 +1,7 @@
 netconf
+pyasn1
+pyasn1-modules
+cryptography
+pyopenssl
+certvalidator
+asn1crypto

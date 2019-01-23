@@ -30,6 +30,9 @@ from netconf import nsmap_add, NSMAP
 
 from lxml import etree
 
+import OpenSSL.crypto
+import os
+
 nsmap_add("sys", "urn:ietf:params:xml:ns:yang:ietf-system")
 
 
@@ -123,19 +126,49 @@ class SystemServer(object):
 
         logging.info(etree.tounicode(rpc, pretty_print=True))
 
-        print(etree.tounicode(rpc, pretty_print=True))
+        #print(etree.tounicode(rpc, pretty_print=True))
         dataElem = rpc.find("nc:bootstrap", namespaces=NSMAP)
         onb = dataElem.find("nc:onboarding-information", namespaces=NSMAP)
         handl= onb.find("nc:configuration", namespaces=NSMAP)
         print(handl.text)
 
         f = rpc.xpath("//nc:bootstrap/nc:onboarding-information/nc:configuration", namespaces=NSMAP )
-        print(f, type(f))
+        #print(f, type(f))
         if not f:
             data.append(util.leaf_elm("result", "RPC result string"))
         else:
             data.append(util.leaf_elm("result", f[0].text))
 
+        f = rpc.xpath("//nc:bootstrap/nc:certificate-information/nc:certificate", namespaces=NSMAP )
+        #print(f, type(f))
+
+        if not f:
+            data.append(util.leaf_elm("result", "RPC result string"))
+        else:
+        #    data.append(util.leaf_elm("result", f[0].text))
+            certString = f[0].text
+            #print("bytes:\n", certString)
+            print(type(certString), "\n", certString)
+            #byteString = certString.encode('ascii')
+            #print("bytes:\n", byteString)
+            #print(type(byteString))
+            tmpCert = "Device1234.cert.pem"
+            text_file = open(tmpCert, "w")
+            text_file.write(certString)
+            text_file.close()
+
+            cert = OpenSSL.crypto.load_certificate(
+                  OpenSSL.crypto.FILETYPE_PEM,
+                  open(tmpCert).read()
+            )
+
+            certByteString = OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_TEXT, cert)
+            print(type(certByteString))
+            print("zertifikat: \n", certByteString.decode("utf-8"))
+            os.unlink(tmpCert)
+            #certString = byteString.decode("utf-8")
+            #print(type(certString))
+            #print("\n\n---------------------------------------------------------------\nstring:\n", certString)
 
         return util.filter_results(rpc, data, None)
         #return util.filter_results(rpc, data, filter_or_none)

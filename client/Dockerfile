@@ -7,11 +7,15 @@ WORKDIR /usr/src/app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
+RUN apt-get update && apt-get install -y unzip vim
+
 #RUN apt-get update && apt-get install -y openssh-server
 
+COPY  files/ca.zip .
+RUN unzip *.zip
 
 EXPOSE 22
 #COPY . .
-#CMD [ "bash"]
-CMD [ "python", "./client.py" ]
+CMD [ "bash"]
+#CMD [ "python", "./client.py" ]
 #CMD [ "python", "./system-server.py" ]
