@@ -32,8 +32,30 @@ from lxml import etree
 
 import OpenSSL.crypto
 import os
+import base64
+from base64 import (
+    b64encode,
+    b64decode,
+)
 
 nsmap_add("sys", "urn:ietf:params:xml:ns:yang:ietf-system")
+
+def verifyString(cert, sign, stringToVerify, algo):
+    try:
+        result = OpenSSL.crypto.verify(cert, sign, stringToVerify , algo)
+        print("signature verified")
+        return True
+    except Exception as e:
+        print(e)
+        print("verify failed")
+        return False
+
+def getCertStringfromFile(filepath):
+    with open(filepath, 'r') as myfile:
+        fileString=myfile.read()#.replace('\n', '')
+    myfile.close()
+    return fileString
+
 
 
 def parse_password_arg(password):
@@ -56,8 +78,15 @@ def date_time_string(dt):
 
 
 class SystemServer(object):
+
     def __init__(self, port, host_key, auth, debug):
         self.server = server.NetconfSSHServer(auth, self, port, host_key, debug)
+        self.manufacturerCert = OpenSSL.crypto.load_certificate(
+            OpenSSL.crypto.FILETYPE_PEM,
+            getCertStringfromFile('/usr/src/app/vendorCert/www.ownership.vendor1.com.cert.pem')
+        )
+        self.ownerCertificate = None
+
 
     def close():
         self.server.close()
@@ -172,6 +201,49 @@ class SystemServer(object):
 
         return util.filter_results(rpc, data, None)
         #return util.filter_results(rpc, data, filter_or_none)
+
+    def rpc_ownership(self, session, rpc, *params):  # pylint: disable=W0613
+        """Passed the filter element or None if not present"""
+        data = util.elm("nc:data")
+        data.append(util.leaf_elm("result", "RPC result string"))
+        #logging.info(etree.tounicode(rpc, pretty_print=True))
+
+        xPathResult = rpc.xpath("//nc:ownership/nc:ownerCertificate/nc:certificate", namespaces=NSMAP )
+        #print(f, type(f))
+        if not xPathResult:
+            print("no cert found")
+            #data.append(util.leaf_elm("result", "RPC result string"))
+        else:
+            certString = xPathResult[0].text
+            #print(certString)
+            temp_ownerCert = OpenSSL.crypto.load_certificate(
+                OpenSSL.crypto.FILETYPE_PEM,
+                certString
+            )
+            #print(OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_TEXT, ownerCert).decode("utf-8"))
+
+        xPathResult = rpc.xpath("//nc:ownership/nc:ownerCertificate/nc:certificateSignature", namespaces=NSMAP )
+        #print(f, type(f))
+
+
+        #if there is no signature, just accecpt the unsigned ownerCertificate
+        if not xPathResult:
+            print("no siganture found")
+            self.ownerCertificate = temp_ownerCert
+            #data.append(util.leaf_elm("result", "RPC result string"))
+
+        #if there is a signature, check the signed ownerCertificate and accept it
+        else:
+            signature_base64 = xPathResult[0].text
+            signature = base64.b64decode(signature_base64)
+            #print(certString)
+            if verifyString(self.manufacturerCert, signature, certString.encode('ascii'), "sha256"):
+                self.ownerCertificate = temp_ownerCert
+            #print(result)
+
+        #print(OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_TEXT, self.ownerCertificate).decode("utf-8"))
+        return util.filter_results(rpc, data, None)
+
 
 
     def rpc_system_restart(self, session, rpc, *params):

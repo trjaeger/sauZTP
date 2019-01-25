@@ -8,12 +8,13 @@ WORKDIR /usr/src/app
 #ENV https_proxy "http://cwproxy.controlware.de:8080"
 
 #RUN apt-get update;apt-get install -y wget openssh-server
-RUN apt-get update && apt-get install -y openssh-server openssh-client unzip
+RUN apt-get update && apt-get install -y openssh-server openssh-client unzip vim
 #RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
 
 COPY  files/ca.zip .
 RUN unzip *.zip
 
+RUN pip install --upgrade pip
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 

@@ -1,0 +1,2 @@
+V	290121124739Z		6C466C1CDBD23559	unknown	/C=DE/ST=Hessen/O=Controlware GmbH/CN=CW Signing CA
+V	200203125533Z		F2ACFF1E198596E2	unknown	/C=DE/ST=Hessen/L=Dietzenbach/O=Controlware GmbH
