@@ -4,14 +4,15 @@ from lxml import etree
 import netconf.util as util
 from netconf import nsmap_add, nsmap_update
 from netconf import NSMAP
-
+import logging
 import re
 #print(cert.serial_number)
 #print(cert)
-print("\n\n\n\n\n")
+#print("\n\n\n\n\n")
 certfile = '/usr/src/app/ca/8021ARintermediate/certs/Device1234.cert.pem'
 
-
+logging.basicConfig(level=logging.INFO)
+logging.info('HAAALLLOOO LOOOG')
 import OpenSSL.crypto
 from asn1crypto import pem
 
@@ -51,10 +52,6 @@ def verify_certificate_chain(certfile, chain_file):
     except Exception as e:
         print(e)
         return False
-
-    #print(ctx)
-
-
 
 
 #validator = CertificateValidator(end_entity_cert)
@@ -99,8 +96,8 @@ zKey['configuration'] = 'tbd'
 zKey['post-configuration-script'] = 'post.py'
 
 
-substrate = encode(zKey)
-print (type(substrate), substrate)
+asnString = encode(zKey)
+#logging.info (type(asnString), str(asnString))
 
 from base64 import (
     b64encode,
@@ -150,7 +147,7 @@ def test():
     chain_file = '/usr/src/app/ca/8021ARintermediate/certs/ca-chain.cert.pem'
     result = verify_certificate_chain(certfile ,chain_file)
     if result:
-        print('Certificate validated')
+        logging.info('Certificate validated')
     #exit()
 
     cert = OpenSSL.crypto.load_certificate(
@@ -175,25 +172,15 @@ test64 = base64.b64decode(data_base64)
 verifyString('/usr/src/app/python/cwCA/intermediate/certs/intermediate.cert.pem', test64, teststring.encode('ascii'),"sha256")
 '''
 
-received_record, _ = decode(substrate, asn1Spec=bootstrapInformation())
+received_record, _ = decode(asnString, asn1Spec=bootstrapInformation())
 #print (type(received_record))
 #print ("received: ", received_record)
 for field in received_record:
-    print('{}   \t- {}'.format(field, received_record[field]))
+    print('{:>25} - {:<}'.format(field, str(received_record[field])))
 
 #print(base64.encodebytes(substrate))
 
 
-exit()
-'''
-received_record, _ = decode(substrate, asn1Spec=ZKey())
-#print (type(received_record))
-#print ("received: ", received_record)
-for field in received_record:
-    print('{}   \t- {}'.format(field, received_record[field]))
-
-print(base64.encodebytes(substrate))
-'''
 #exit()
 nsmap_add("sys", "urn:ietf:params:xml:ns:yang:ietf-system")
 MODEL_NS = "urn:my-urn:my-model"
@@ -210,8 +197,8 @@ sign = signString (privateKeyFile ,b"password", fileString.encode('ascii'), "sha
 #Encode signature so it can be send as a string
 sign_base64 = base64.b64encode(sign)
 utf8Signature = sign_base64.decode('utf-8')
+ownershipRPC = util.elm("ownership")
 if verifyString('/usr/src/app/python/vendorCA/intermediate/certs/www.ownership.vendor1.com.cert.pem', sign, fileString.encode('ascii'),"sha256"):
-    ownershipRPC = util.elm("ownership")
     ownerCertificate = util.subelm(ownershipRPC, "ownerCertificate")
     ownerCertificate.append(util.leaf_elm("certificate", fileString))
     #ownerCertificate.append(util.leaf_elm("certificateSignature", sign_base64))
@@ -220,21 +207,28 @@ if verifyString('/usr/src/app/python/vendorCA/intermediate/certs/www.ownership.v
 #print(etree.tounicode(ownershipRPC, pretty_print=True))
 #exit()
 
+bootstrapRPC = util.elm("bootstrap")
+bootInfo  = util.subelm(bootstrapRPC, "bootInfo")
+bootInfo_base64 = base64.b64encode(asnString)
+utf8BootInfo = bootInfo_base64.decode('utf-8')
+
+privateKeyFile = "/usr/src/app/python/cwCA/intermediate/private/www.ap.controlware.com.key.pem"
+sign = signString (privateKeyFile ,b"password", utf8BootInfo.encode('ascii'), "sha256" )
+sign_base64 = base64.b64encode(sign)
+utf8Signature = sign_base64.decode('utf-8')
+
+bootInfo.append(util.leaf_elm("bootInfoASN", utf8BootInfo))
+
+if verifyString('/usr/src/app/python/cwCA/intermediate/certs/www.ap.controlware.com.cert.pem', sign, utf8BootInfo.encode('ascii'),"sha256"):
+    bootInfo.append(util.leaf_elm("bootInfoSignature", utf8Signature))
+
 session = NetconfSSHSession("172.17.0.3", "8300", "admin", "admin", debug=True)
-#reply = session.get_config()
-#root, reply, replystring = session.send_rpc("<my-cool-rpc/>")
-
-#root, reply, replystring = session.send_rpc("<bootstrap/>")
 root, reply, replystring = session.send_rpc(ownershipRPC)
-
+root, reply, replystring = session.send_rpc(bootstrapRPC)
 session.close()
-'''
-reply_list = list(reply)
-for e in reply_list:
-    print (e.tag, e.attrib, e.text)
-print("\n")
-dataElem = reply_list[0]
-'''
+
+
+
 dataElem = reply.find("nc:data", namespaces=NSMAP)
 x = dataElem.find("nc:result", namespaces=NSMAP)
 if x is not None:

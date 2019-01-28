@@ -38,6 +38,26 @@ from base64 import (
     b64decode,
 )
 
+from pyasn1.type import univ, namedtype, tag
+from pyasn1.codec.der.encoder import encode
+from pyasn1.codec.der.decoder import decode
+import base64
+
+class bootstrapInformation(univ.Sequence):
+   componentType = namedtype.NamedTypes(
+       namedtype.NamedType('id', univ.Integer()),
+       namedtype.NamedType('os-name', univ.OctetString()),
+       namedtype.NamedType('os-version', univ.OctetString()),
+       namedtype.NamedType('download-uri', univ.OctetString()),
+       namedtype.NamedType('hash-algorithm', univ.OctetString()),
+       namedtype.NamedType('hash-value', univ.OctetString()),
+       namedtype.NamedType('configuration-handling', univ.OctetString()),
+       namedtype.NamedType('pre-configuration-script', univ.OctetString()),
+       namedtype.NamedType('configuration', univ.OctetString()),
+       namedtype.NamedType('post-configuration-script', univ.OctetString())
+   )
+
+
 nsmap_add("sys", "urn:ietf:params:xml:ns:yang:ietf-system")
 
 def verifyString(cert, sign, stringToVerify, algo):
@@ -75,6 +95,15 @@ def date_time_string(dt):
     if tz:
         s += " {}:{}".format(tz[:-2], tz[-2:])
     return s
+
+def doBootstrap(bootparam_base64):
+    bootparam = base64.b64decode(bootparam_base64)
+    print(bootparam_base64)
+    print(type(bootparam))
+
+    received_record, _ = decode(bootparam, asn1Spec=bootstrapInformation())
+    for field in received_record:
+        print('{:>25} - {:<}'.format(field, str(received_record[field])))
 
 
 class SystemServer(object):
@@ -144,78 +173,46 @@ class SystemServer(object):
 
         return util.filter_results(rpc, data, filter_or_none)
 
-    def rpc_bootstrap(self, session, rpc, *params):  # pylint: disable=W0613
+    def rpc_bootstrap(self, session, rpc, *params):
         """Passed the filter element or None if not present"""
+        #print(etree.tounicode(rpc, pretty_print=True))
         data = util.elm("nc:data")
-        #return util.elm("ok")
 
-        #if self.debug:
-        #print(etree.tounicode(rpc, pretty_print=True))
-        #print(etree.tounicode(rpc))
-
-        logging.info(etree.tounicode(rpc, pretty_print=True))
-
-        #print(etree.tounicode(rpc, pretty_print=True))
-        dataElem = rpc.find("nc:bootstrap", namespaces=NSMAP)
-        onb = dataElem.find("nc:onboarding-information", namespaces=NSMAP)
-        handl= onb.find("nc:configuration", namespaces=NSMAP)
-        print(handl.text)
-
-        f = rpc.xpath("//nc:bootstrap/nc:onboarding-information/nc:configuration", namespaces=NSMAP )
-        #print(f, type(f))
-        if not f:
-            data.append(util.leaf_elm("result", "RPC result string"))
+        xPathResult = rpc.xpath("//nc:bootstrap/nc:bootInfo/nc:bootInfoASN", namespaces=NSMAP )
+        if not xPathResult:
+            print("no bootstrapping ASN found")
+            #data.append(util.leaf_elm("result", "RPC result string"))
         else:
-            data.append(util.leaf_elm("result", f[0].text))
+            bootparam_base64 = xPathResult[0].text
+            #print (received_record['id'])
 
-        f = rpc.xpath("//nc:bootstrap/nc:certificate-information/nc:certificate", namespaces=NSMAP )
-        #print(f, type(f))
+        xPathResult = rpc.xpath("//nc:bootstrap/nc:bootInfo/nc:bootInfoSignature", namespaces=NSMAP )
 
-        if not f:
-            data.append(util.leaf_elm("result", "RPC result string"))
+        #if there is no signature, just accecpt the unsigned Information
+        if not xPathResult:
+            print("no siganture found")
+            doBootstrap(bootparam_base64)
+
+        #if there is a signature, check the signed ownerCertificate and accept it
         else:
-        #    data.append(util.leaf_elm("result", f[0].text))
-            certString = f[0].text
-            #print("bytes:\n", certString)
-            print(type(certString), "\n", certString)
-            #byteString = certString.encode('ascii')
-            #print("bytes:\n", byteString)
-            #print(type(byteString))
-            tmpCert = "Device1234.cert.pem"
-            text_file = open(tmpCert, "w")
-            text_file.write(certString)
-            text_file.close()
-
-            cert = OpenSSL.crypto.load_certificate(
-                  OpenSSL.crypto.FILETYPE_PEM,
-                  open(tmpCert).read()
-            )
-
-            certByteString = OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_TEXT, cert)
-            print(type(certByteString))
-            print("zertifikat: \n", certByteString.decode("utf-8"))
-            os.unlink(tmpCert)
-            #certString = byteString.decode("utf-8")
-            #print(type(certString))
-            #print("\n\n---------------------------------------------------------------\nstring:\n", certString)
+            signature_base64 = xPathResult[0].text
+            signature = base64.b64decode(signature_base64)
+            if verifyString(self.ownerCertificate, signature, bootparam_base64.encode('ascii'), "sha256"):
+                doBootstrap(bootparam_base64)
 
         return util.filter_results(rpc, data, None)
-        #return util.filter_results(rpc, data, filter_or_none)
 
-    def rpc_ownership(self, session, rpc, *params):  # pylint: disable=W0613
+
+    def rpc_ownership(self, session, rpc, *params):
         """Passed the filter element or None if not present"""
         data = util.elm("nc:data")
         data.append(util.leaf_elm("result", "RPC result string"))
-        #logging.info(etree.tounicode(rpc, pretty_print=True))
 
         xPathResult = rpc.xpath("//nc:ownership/nc:ownerCertificate/nc:certificate", namespaces=NSMAP )
-        #print(f, type(f))
         if not xPathResult:
             print("no cert found")
-            #data.append(util.leaf_elm("result", "RPC result string"))
         else:
             certString = xPathResult[0].text
-            #print(certString)
             temp_ownerCert = OpenSSL.crypto.load_certificate(
                 OpenSSL.crypto.FILETYPE_PEM,
                 certString
@@ -223,14 +220,11 @@ class SystemServer(object):
             #print(OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_TEXT, ownerCert).decode("utf-8"))
 
         xPathResult = rpc.xpath("//nc:ownership/nc:ownerCertificate/nc:certificateSignature", namespaces=NSMAP )
-        #print(f, type(f))
 
-
-        #if there is no signature, just accecpt the unsigned ownerCertificate
+        #if there is no signature at all, just accecpt the unsigned ownerCertificate
         if not xPathResult:
             print("no siganture found")
             self.ownerCertificate = temp_ownerCert
-            #data.append(util.leaf_elm("result", "RPC result string"))
 
         #if there is a signature, check the signed ownerCertificate and accept it
         else:
@@ -286,7 +280,7 @@ def main(*margs):
 if __name__ == "__main__":
     main()
 
-__author__ = 'Christian Hopps'
-__date__ = 'February 24 2018'
+__author__ = 'Robin Jäger'
+__date__ = 'January 01 2019'
 __version__ = '1.0'
-__docformat__ = "restructuredtext en"
+__docformat__ = "en"
