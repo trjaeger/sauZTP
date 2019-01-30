@@ -13,6 +13,6 @@ the commands are mostly for documentation purposes, use your own paths according
         
 ## proxy - implementation of the registration proxy
     docker build -t proxy .
-    docker run -it -P --rm --name running-proxy -v ~/src/client/python:/usr/src/app/python proxy
+    docker run -it -P --rm --name running-proxy -v ~/src/proxy/python:/usr/src/app/python proxy
     
 ## test/ - contains additional containers used for testing purposes 
