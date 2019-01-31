@@ -31,7 +31,7 @@ def verify_certificate_chain(certfile, chain_file):
 
     with open(chain_file, 'rb') as f:
         chain_cert = f.read()
-
+    f.close()
     client_cert = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, getCertStringfromFile(certfile))
     #print(OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_TEXT, client_cert).decode("utf-8"))
 
