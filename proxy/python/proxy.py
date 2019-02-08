@@ -229,6 +229,7 @@ while True:
         # But for the demo, we just pretend...
         time.sleep(5)
         # simulate no request from pledge
+        '''
         if grasp._prng.randint(0,2) == 0:
             grasp.tprint("No pledge contacted proxy")
         else:
@@ -250,7 +251,7 @@ while True:
             except:
                 # Socket failure, we should mark this registrar as expired.
                 grasp.tprint("Communication failed, expiring that registrar")
-
+'''
             ###################################
             # Wait and loop back to find another registrar
             # and wait for another pledge.

@@ -21,7 +21,7 @@ RUN git clone https://github.com/becarpenter/graspy.git
 RUN cp grasp.py graspy/grasp.py
 EXPOSE 22
 #COPY . .
-CMD [ "bash"]
-#CMD [ "python", "./python/RegServer.py" ]
+#CMD [ "bash"]
+CMD [ "python", "./python/RegServer.py" ]
 #CMD [ "python", "./client.py" ]
 #CMD [ "python", "./system-server.py" ]
