@@ -1,148 +1,261 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
-#****************************************************
-#                                                   *
-#               HTTP PROXY                          *
-#               Version: 1.0                        *
-#               Author: Luu Gia Thuy                *
-#                                                   *
-#****************************************************
+"""This is some demo code showing how a BRSKI proxy would
+find a registrar in an ANIMA network using GRASP. This version
+also shows how the proxy could advertise itself by flooding
+to on-link nodes seeking a proxy. The actual BRSKI transactions
+are not included.
+"""
 
-#taken from https://github.com/luugiathuy/WebProxyPython/blob/master/proxy.py
+import sys
+#sys.path.insert(0, '..') # in case grasp.py is one level up
+sys.path.insert(0, 'graspy/')
+import grasp
+import threading
+import time
+import socket
+try:
+    socket.IPPROTO_IPV6
+except:
+    socket.IPPROTO_IPV6 = 41
+import ipaddress
+
+###################################
+# Utility routine for debugging:
+# Print out the GRASP objective registry
+# and flood cache
+###################################
+
+def dump_some():
+    grasp.tprint("Objective registry contents:")
+    for x in grasp._obj_registry:
+        o= x.objective
+        grasp.tprint(o.name,"ASA:",x.asa_id,"Listen:",x.listening,"Neg:",o.neg,
+               "Synch:",o.synch,"Count:",o.loop_count,"Value:",o.value)
+    grasp.tprint("Flood cache contents:")
+    for x in grasp._flood_cache:
+        grasp.tprint(x.objective.name,"count:",x.objective.loop_count,"value:",
+                     x.objective.value,"source",x.source.locator, x.source.protocol,
+                     x.source.port,"expiry",x.source.expire)
+
+###################################
+# Function to flood an objective
+###################################
+
+def floodout(registrar):
+
+    r_addr = registrar.locator
+    r_port = registrar.port
+    r_proto = registrar.protocol
+    grasp.tprint("Chose registrar", r_addr, r_proto, r_port)
+
+    ###################################
+    # Finalise the locator
+    ###################################
 
 
-import os,sys,_thread,socket
-
-#********* CONSTANT VARIABLES *********
-BACKLOG = 50            # how many pending connections queue will hold
-MAX_DATA_RECV = 999999  # max number of bytes we receive at once
-DEBUG = True            # set to True to see the debug msgs
-BLOCKED = []            # just an example. Remove with [""] for no blocking at all.
-
-#**************************************
-#********* MAIN PROGRAM ***************
-#**************************************
-def main():
-
-    # check the length of command running
-    if (len(sys.argv)<2):
-        print ("No port given, using :8080 (http-alt)")
-        port = 8080
+    proxy_locator.protocol = registrar.protocol
+    if registrar.protocol == socket.IPPROTO_TCP:
+        proxy_locator.port = t_port
+    elif registrar.protocol == socket.IPPROTO_UDP:
+        proxy_locator.port = u_port
+    elif registrar.protocol == socket.IPPROTO_IPV6:
+        proxy_locator.port = 0
     else:
-        port = int(sys.argv[1]) # port from argument
+        return # unknown method
 
-    # host and port info.
-    host = ''               # blank for localhost
+    ###################################
+    # Flood it out for the pledges
+    ###################################
 
-    print ("Proxy Server Running on ",host,":",port)
-
-    try:
-        # create a socket
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-        # associate the socket to host and port
-        s.bind((host, port))
-
-        # listenning
-        s.listen(BACKLOG)
-
-    except socket.error:
-        if s:
-            s.close()
-        print ("Could not open socket:", message)
-        sys.exit(1)
-
-    # get the connection from client
-    while 1:
-        conn, client_addr = s.accept()
-
-        # create a thread to handle request
-        thread.start_new_thread(proxy_thread, (conn, client_addr))
-
-    s.close()
-#************** END MAIN PROGRAM ***************
-
-def printout(type,request,address):
-    if "Block" in type or "Blacklist" in type:
-        colornum = 91
-    elif "Request" in type:
-        colornum = 92
-    elif "Reset" in type:
-        colornum = 93
-
-    print ("\033[",colornum,"m",address[0],"\t",type,"\t",request,"\033[0m")
-
-#*******************************************
-#********* PROXY_THREAD FUNC ***************
-# A thread to handle request from browser
-#*******************************************
-def proxy_thread(conn, client_addr):
-
-    # get the request from browser
-    request = conn.recv(MAX_DATA_RECV)
-
-    # parse the first line
-    first_line = request.split('\n')[0]
-
-    # get url
-    url = first_line.split(' ')[1]
-
-    for i in range(0,len(BLOCKED)):
-        if BLOCKED[i] in url:
-            printout("Blacklisted",first_line,client_addr)
-            conn.close()
-            sys.exit(1)
+    grasp.tprint("Flooding",proxy_obj.name, proxy_locator.locator, proxy_locator.protocol, proxy_locator.port)
+    grasp.flood(_asa_nonce, proxy_ttl, grasp.tagged_objective(proxy_obj, proxy_locator))
+    return
 
 
-    printout("Request",first_line,client_addr)
+###################################
+# Main thread starts here
+###################################
 
-    # find the webserver and port
-    http_pos = url.find("://")          # find pos of ://
-    if (http_pos==-1):
-        temp = url
-    else:
-        temp = url[(http_pos+3):]       # get the rest of url
+grasp.tprint("==========================")
+grasp.tprint("ASA Procksy is starting up.")
+grasp.tprint("==========================")
+grasp.tprint("Procksy is a demonstration Autonomic Service Agent.")
+grasp.tprint("It mimics a BRSKI Join Assistant (proxy) by")
+grasp.tprint("looking for a registrar and then by announcing")
+grasp.tprint("the methods it supports, with associated locators,")
+grasp.tprint("as flooded GRASP objectives.")
+grasp.tprint("Then it pretends to generate BRSKI traffic.")
+grasp.tprint("This version uses floods to find a registrar,")
+grasp.tprint("per draft-ietf-anima-bootstrapping-keyinfra-12")
+#grasp.tprint('modulo an error in the "AN_proxy" definition')
+grasp.tprint("On Windows or Linux, there should soon be")
+grasp.tprint("a nice window that displays the process.")
+grasp.tprint("==========================")
 
-    port_pos = temp.find(":")           # find the port pos (if any)
 
-    # find end of web server
-    webserver_pos = temp.find("/")
-    if webserver_pos == -1:
-        webserver_pos = len(temp)
 
-    webserver = ""
-    port = -1
-    if (port_pos==-1 or webserver_pos < port_pos):      # default port
-        port = 80
-        webserver = temp[:webserver_pos]
-    else:       # specific port
-        port = int((temp[(port_pos+1):])[:webserver_pos-port_pos-1])
-        webserver = temp[:port_pos]
+#grasp.test_mode = True # tell everybody it's a test, will print extra diagnostics
+time.sleep(1) # time to read the text
 
-    try:
-        # create a socket to connect to the web server
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((webserver, port))
-        s.send(request)         # send request to webserver
 
-        while 1:
-            # receive data from web server
-            data = s.recv(MAX_DATA_RECV)
+####################################
+# Register this ASA
+####################################
 
-            if (len(data) > 0):
-                # send to browser
-                conn.send(data)
+# The ASA name is arbitrary - it just needs to be
+# unique in the GRASP instance.
+
+grasp.skip_dialogue(False,False,True)
+_err,_asa_nonce = grasp.register_asa("Procksy")
+if not _err:
+    grasp.tprint("ASA Procksy registered OK")
+else:
+    grasp.tprint("ASA registration failure:",grasp.etext[_err])
+    exit()
+
+####################################
+# Construct a GRASP objective
+####################################
+
+# This is an empty GRASP objective to find the registrar
+# It's only used for get_flood so doesn't need to be filled in
+
+reg_obj = grasp.objective("AN_join_registrar")
+reg_obj.synch = True
+
+####################################
+# Create ports for the proxy's communication
+# with pledges
+####################################
+
+# For this demo, we just make up some numbers:
+
+t_port = 11800 + grasp._prng.randint(0,5) #slightly random for demo
+u_port = 11900 + grasp._prng.randint(0,5) #slightly random for demo
+
+proxy_address = grasp.unspec_address # This is the unspecified address,
+                                     # which signals link-local address to API
+proxy_ttl = 180000 #milliseconds to live of the announcement
+
+####################################
+# Construct a correponding asa_locator
+####################################
+
+proxy_locator = grasp.asa_locator(proxy_address,0,False)
+proxy_locator.is_ipaddress = True
+
+
+####################################
+# Construct the GRASP objective to announce the proxy
+####################################
+
+proxy_obj = grasp.objective("AN_proxy")
+proxy_obj.synch = True
+proxy_obj.value = ""
+# proxy_obj.loop_count not set, the API forces it to 1 for link-local use
+
+
+####################################
+# Register the GRASP objective
+####################################
+
+grasp.skip_dialogue(False,False,True)
+_err = grasp.register_obj(_asa_nonce, proxy_obj)
+if not _err:
+    grasp.tprint("Objective", proxy_obj.name,"registered OK")
+else:
+    grasp.tprint("Objective registration failure:", grasp.etext[_err])
+    exit() # demo code doesn't handle registration errors
+
+####################################
+# Start pretty printing
+####################################
+
+#grasp.init_bubble_text("BRSKI Join Proxy")
+grasp.tprint("Proxy starting now")
+
+###################################
+# Now find the registrar and pick one or two methods
+###################################
+
+while True:
+    registrar1 = None
+    registrar2 = None
+    _err, _results = grasp.get_flood(_asa_nonce, reg_obj)
+    if not _err:
+        # _results contains the returned locators if any
+        for x in _results:
+            # use whatever logic you want to decide which results to use.
+            # For the demo code, we just pick one or two at random:
+            grasp.tprint("Got", reg_obj.name, "at",
+                         x.source.locator, x.source.protocol, x.source.port)
+                         #"Got AN_join_registrar at None 6 7017"
+            grasp.tprint("\n\nGot", reg_obj.name, "at",  x.source.locator, x.source.protocol, x.source.port, "\n\n")
+            #Got AN_join_registrar at 2002:ac14::3 6 80
+
+            #if (not registrar1) and grasp._prng.randint(0,2):
+            if (not registrar1):
+                registrar1 = x.source
+            #elif grasp._prng.randint(0,2):
             else:
-                break
-        s.close()
-        conn.close()
-    except socket.error:
-        if s:
-            s.close()
-        if conn:
-            conn.close()
-        printout("Peer Reset",first_line,client_addr)
-        sys.exit(1)
-#********** END PROXY_THREAD ***********
+                if x.source != registrar1:
+                    registrar2 = x.source
 
-if __name__ == '__main__':
-    main()
+        grasp.tprint(registrar1, registrar2)
+        #<grasp.asa_locator object at 0x7fd37cc16390> None
+    else:
+        grasp.tprint("get_flood failed", grasp.etext[_err])
+
+    ###################################
+    # Flood the chosen ones to neighbors
+    ###################################
+
+    if registrar1:
+        #grasp.tprint("Floodout1")
+        floodout(registrar1)
+        if registrar2:
+            #grasp.tprint("Floodout2")
+            floodout(registrar2)
+        grasp.tprint(registrar1,registrar2) # <grasp.asa_locator object at 0x02F27370> None
+
+        ###################################
+        # Listen for a pledge with timeout
+        ###################################
+
+        # Here, do the socket calls etc. to listen
+        # for a BRSKI request from a pledge.
+        # But for the demo, we just pretend...
+        time.sleep(5)
+        # simulate no request from pledge
+        if grasp._prng.randint(0,2) == 0:
+            grasp.tprint("No pledge contacted proxy")
+        else:
+
+            ###################################
+            # BRSKI request received, now proxy it
+            ###################################
+
+            # Here, do the socket calls etc. to talk
+            # to the registrar.
+            # But for the demo, we just pretend...
+
+            try:
+                grasp.tprint("Pretending to contact registrar")
+                # (socket calls etc)
+                # simulate a random failure with a divide-by-zero
+                _= 1/grasp._prng.randint(0,3)
+
+            except:
+                # Socket failure, we should mark this registrar as expired.
+                grasp.tprint("Communication failed, expiring that registrar")
+
+            ###################################
+            # Wait and loop back to find another registrar
+            # and wait for another pledge.
+            ###################################
+    else:
+        grasp.tprint("No registrar found, waiting to try again")
+
+    time.sleep(18) # wait chosen to avoid synchronicity with Reggie

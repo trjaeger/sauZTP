@@ -12,7 +12,7 @@ import re
 certfile = '/usr/src/app/ca/8021ARintermediate/certs/Device1234.cert.pem'
 
 logging.basicConfig(level=logging.INFO)
-logging.info('HAAALLLOOO LOOOG')
+logging.info('STARTING NETCONF CLIENT')
 import OpenSSL.crypto
 from asn1crypto import pem
 
