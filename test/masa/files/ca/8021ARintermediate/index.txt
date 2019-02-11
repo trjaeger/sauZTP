@@ -1,2 +1,0 @@
-V	290113160316Z		DD573144FC980E8F	unknown	/C=DE/ST=Hessen/O=Controlware GmbH/OU=Devices/CN=802.1AR CA
-V	99991231235959Z		A019C2A386FD9A6D	unknown	/O=Controlware GmbH/OU=Devices/serialNumber=Device1234

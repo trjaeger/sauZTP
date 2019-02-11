@@ -4,6 +4,12 @@ import ssl
 #this is needed becaus some wiered bug - see https://stackoverflow.com/a/29977034 and https://stackoverflow.com/a/43191101
 ssl.match_hostname = lambda cert, hostname: True
 
+import sys
+#import GRASP to use its thread safe print function
+sys.path.insert(0, 'graspy/')
+from grasp import tprint
+
+
 HOST, PORT, CERT = '', 443, '/usr/src/app/python/cwCA/intermediate/certs/ca-chain.cert.pem'
 
 
@@ -103,26 +109,30 @@ def handle(conn):
 
 
 def main():
-  sock = socket.socket()
-  sock.bind((HOST, PORT))
-  sock.listen(5)
-  context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-  context.load_cert_chain('/usr/src/app/python/cwCA/intermediate/certs/full-ca-chain.cert.pem', '/usr/src/app/python/cwCA/intermediate/private/www.ap.controlware.com.key.pem', password='password')
-  context.options |= ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1  # optional
-  #context.verify_mode = ssl.CERT_REQUIRED
-  context.set_ciphers('EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH')
-  while True:
-    conn = None
-    ssock, addr = sock.accept()
-    try:
-      conn = context.wrap_socket(ssock, server_side=True)
-      print ("cert:", conn.getpeercert())
-      print("SSL established. Peer: {}".format(conn.getpeercert()))
-      handle(conn)
-    except ssl.SSLError as e:
-      print(e)
-    finally:
-      if conn:
-        conn.close()
+    tprint("==========================")
+    tprint("TLS Server starting now")
+    tprint("==========================")
+    sock = socket.socket()
+    sock.bind((HOST, PORT))
+    sock.listen(5)
+    context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+    context.load_cert_chain('/usr/src/app/python/cwCA/intermediate/certs/full-ca-chain.cert.pem', '/usr/src/app/python/cwCA/intermediate/private/www.ap.controlware.com.key.pem', password='password')
+    context.options |= ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1  # optional
+    #context.verify_mode = ssl.CERT_REQUIRED
+    context.set_ciphers('EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH')
+    while True:
+        conn = None
+        ssock, addr = sock.accept()
+        try:
+            conn = context.wrap_socket(ssock, server_side=True)
+            print ("cert:", conn.getpeercert())
+            print("SSL established. Peer: {}".format(conn.getpeercert()))
+            handle(conn)
+        except ssl.SSLError as e:
+            print(e)
+        finally:
+            if conn:
+                conn.close()
+
 if __name__ == '__main__':
   main()

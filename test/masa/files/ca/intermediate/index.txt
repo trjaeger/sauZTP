@@ -1,3 +1,0 @@
-V	290113151348Z		3FE556DE1DAB267B	unknown	/C=DE/ST=Hessen/O=Controlware GmbH/CN=Signing CA
-V	200126152529Z		D9584FB837B66995	unknown	/C=DE/ST=Hessen/L=Dietzenbach/O=Controlware GmbH
-V	200126152857Z		A837AD8FD22A1B11	unknown	/C=DE/ST=Hessen/L=Dietzenbach/O=Controlware GmbH/UID=rgm
