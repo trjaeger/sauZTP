@@ -19,32 +19,6 @@ client_cert = '/usr/src/app/python/device@vndor1.com.cert.pem'
 client_key = '/usr/src/app/python/Dev1234.key.pem'
 devID_cert = '/usr/src/app/python/vendorCA/8021ARintermediate/certs/Dev1234.cert.pem'
 
-"""
-context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=server_cert)
-context.load_cert_chain(certfile=client_cert, keyfile=client_key, password='password')
-context.verify_mode = ssl.CERT_REQUIRED
-
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-#ssl.wrap_socket(s, ca_certs="ssl/server.crt", cert_reqs=ssl.CERT_REQUIRED, certfile="ssl/client.crt", keyfile="ssl/client.key")
-conn = context.wrap_socket(s, ca_certs=server_cert, cert_reqs=ssl.CERT_REQUIRED, certfile=client_cert, keyfile=client_key, server_hostname=server_sni_hostname)
-conn.connect((host_addr, host_port))
-print("SSL established. Peer: {}".format(conn.getpeercert()))
-print("Sending: 'Hello, world!")
-conn.send(b"Hello, world!")
-print(conn.recv())
-print("Closing connection")
-conn.close()
-
-
-exit()
-
-
-
-"""
-
-
-
 
 from cbor import dumps, loads
 #import json

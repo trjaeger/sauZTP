@@ -10,6 +10,7 @@ import datetime
 #import all the modules
 import GRASP_device
 import TLS_client
+import NETCONF_server
 from queue import Queue
 from math import floor
 
@@ -29,6 +30,7 @@ def main(args):
     tlsConnectionQueue = Queue()
     threads.append(GRASP_device.GRASP_device_Thread(graspDiscoverQueue, ))
     threads.append(TLS_client.TLS_device_Thread(tlsConnectionQueue, ))
+    threads.append(NETCONF_server.TLS_device_Thread())
 
     for t in threads:
         t.start()
