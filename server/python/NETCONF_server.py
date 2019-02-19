@@ -249,7 +249,7 @@ class SystemServer(object):
 class TLS_device_Thread(threading.Thread):
     def __init__(self, kwargs=None):
         threading.Thread.__init__(self, kwargs=None)
-        #self.queue = queue
+        self.queue = queue
         self.daemon = True
 
     def run(self):
