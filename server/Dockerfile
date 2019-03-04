@@ -21,9 +21,10 @@ RUN cp grasp.py graspy/grasp.py
 
 EXPOSE 22 8300
 
-#CMD ["bash"]
+CMD ["bash"]
 #CMD [ "python", "./system-server.py", "--debug" ]
 #CMD [ "python", "./system-server.py"]
 #CMD [ "python", "./python/grasp_device.py"]
 #CMD [ "python", "./tlsClient.py"]
-CMD [ "python", "./python/deviceMain.py"]
+
+#CMD [ "python", "./python/deviceMain.py"]

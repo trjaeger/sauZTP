@@ -5,3 +5,5 @@ pycryptodome
 
 cbor
 netifaces
+
+flask

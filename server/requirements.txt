@@ -6,3 +6,5 @@ pycryptodome
 #used for GRASP
 cbor
 netifaces
+
+requests
