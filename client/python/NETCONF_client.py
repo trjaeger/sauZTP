@@ -159,19 +159,6 @@ def test():
     sign = signString ("/usr/src/app/python/cwCA/intermediate/private/intermediate.key.pem",b"password", substrate, "sha256" )
     verifyString('/usr/src/app/python/cwCA/intermediate/certs/intermediate.cert.pem', sign, substrate,"sha256")
 
-'''
-teststring = "HalloTest123"
-test_sign = signString ("/usr/src/app/python/cwCA/intermediate/private/intermediate.key.pem", b"password", teststring.encode('ascii'), "sha256" )
-verifyString('/usr/src/app/python/cwCA/intermediate/certs/intermediate.cert.pem', test_sign, teststring.encode('ascii'),"sha256")
-#print (type(sign), sign)
-data_base64 = base64.b64encode(test_sign)
-#verifyString('/usr/src/app/python/cwCA/intermediate/certs/intermediate.cert.pem', data_base64, substrate,"sha256")
-#print (type(data_base64), data_base64)
-test64 = base64.b64decode(data_base64)
-#print (type(test64), test64)
-verifyString('/usr/src/app/python/cwCA/intermediate/certs/intermediate.cert.pem', test64, teststring.encode('ascii'),"sha256")
-'''
-
 received_record, _ = decode(asnString, asn1Spec=bootstrapInformation())
 #print (type(received_record))
 #print ("received: ", received_record)
@@ -222,6 +209,7 @@ bootInfo.append(util.leaf_elm("bootInfoASN", utf8BootInfo))
 if verifyString('/usr/src/app/python/cwCA/intermediate/certs/www.ap.controlware.com.cert.pem', sign, utf8BootInfo.encode('ascii'),"sha256"):
     bootInfo.append(util.leaf_elm("bootInfoSignature", utf8Signature))
 
+#TODO: not hardcode
 session = NetconfSSHSession("172.17.0.3", "8300", "admin", "admin", debug=True)
 root, reply, replystring = session.send_rpc(ownershipRPC)
 root, reply, replystring = session.send_rpc(bootstrapRPC)

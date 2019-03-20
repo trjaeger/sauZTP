@@ -1,0 +1,88 @@
+// pyang --plugindir $PYBINDPLUGIN -f pybind bootstrap.yang > bootstrap.py
+// pyang -f tree bootstrap.yang
+
+
+// module name
+module bootstrap {
+
+    // boilerplate
+    yang-version "1";
+    //not sure what namespace to use here, needs revisit
+    namespace "https://bootstrap.namespace";
+    prefix "bt";
+
+
+    grouping download-information{
+      leaf download-uri {
+          type string;
+          mandatory true;
+      }
+      container verification{
+          leaf hash-algorithm{
+            type string;
+          }
+          leaf hash-value{
+            type string;
+          }
+      }
+    }
+
+    // this grouping will all the personal data we will assign to individuals
+    grouping OS {
+        description "Contain information to which OS the device should update";
+        leaf name {
+            type string;
+            mandatory true;
+        }
+        leaf version {
+            type string;
+            mandatory true;
+        }
+        uses download-information;
+
+    }
+
+
+    grouping script {
+      description "Contain information to which OS the device should update";
+      leaf filename {
+          type string;
+          mandatory true;
+      }
+
+      leaf interpreter {
+          type string;
+          mandatory true;
+      }
+
+      uses download-information;
+    }
+
+
+
+    container bootstrap-information {
+      leaf id {
+          type string;
+           mandatory true;
+      }
+        container boot-image {
+            uses OS;
+        }
+
+        leaf configuration-handling {
+            type string;
+        }
+
+        container pre-configuration-script {
+            uses script;
+        }
+
+        leaf configuration {
+            type binary;
+        }
+
+        container post-configuration-script {
+            uses script;
+        }
+    }
+  }
