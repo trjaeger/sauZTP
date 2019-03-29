@@ -1,10 +1,9 @@
 netconf
-pyopenssl
 cryptography==2.4.2
+pyopenssl
 pycryptodome
 
-#used for GRASP
 cbor
 netifaces
 
-requests
+flask
