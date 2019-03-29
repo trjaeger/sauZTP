@@ -185,7 +185,12 @@ sign = signString (privateKeyFile ,b"password", fileString.encode('ascii'), "sha
 sign_base64 = base64.b64encode(sign)
 utf8Signature = sign_base64.decode('utf-8')
 ownershipRPC = util.elm("ownership")
-if verifyString('/usr/src/app/python/vendorCA/intermediate/certs/www.ownership.vendor1.com.cert.pem', sign, fileString.encode('ascii'),"sha256"):
+cert = OpenSSL.crypto.load_certificate(
+    OpenSSL.crypto.FILETYPE_PEM,
+    getCertStringfromFile('/usr/src/app/python/vendorCA/intermediate/certs/www.ownership.vendor1.com.cert.pem')
+)
+if verifyString(cert, sign, fileString.encode('ascii'),"sha256"):
+#if verifyString('/usr/src/app/python/vendorCA/intermediate/certs/www.ownership.vendor1.com.cert.pem', sign, fileString.encode('ascii'),"sha256"):
     ownerCertificate = util.subelm(ownershipRPC, "ownerCertificate")
     ownerCertificate.append(util.leaf_elm("certificate", fileString))
     #ownerCertificate.append(util.leaf_elm("certificateSignature", sign_base64))

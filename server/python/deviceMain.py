@@ -8,9 +8,11 @@ from _thread import start_new_thread
 import datetime
 
 #import all the modules
-import GRASP_device
-import TLS_client
+import grasp_device
+#import TLS_client
 import NETCONF_server
+import REST_client
+
 from queue import Queue
 from math import floor
 
@@ -28,12 +30,15 @@ def main(args):
     connectCandidates = []
     graspDiscoverQueue = Queue()
     tlsConnectionQueue = Queue()
-    threads.append(GRASP_device.GRASP_device_Thread(graspDiscoverQueue, ))
-    threads.append(TLS_client.TLS_device_Thread(tlsConnectionQueue, ))
-    threads.append(NETCONF_server.TLS_device_Thread())
+    #threads.append(GRASP_device.GRASP_device_Thread(graspDiscoverQueue, ))
+    #threads.append(TLS_client.TLS_device_Thread(tlsConnectionQueue, ))
+    #threads.append(NETCONF_server.NETCONF_device_Thread())
+    threads.append(REST_client.REST_device_Thread(tlsConnectionQueue))
 
     for t in threads:
         t.start()
+
+    tlsConnectionQueue.put('172.20.0.3')
     while(True):
 
         """

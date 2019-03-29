@@ -27,6 +27,7 @@ import sys
 import time
 from netconf import error, server, util
 from netconf import nsmap_add, NSMAP
+import threading
 
 from lxml import etree
 
@@ -246,7 +247,7 @@ class SystemServer(object):
     def rpc_system_shutdown(self, session, rpc, *params):
         raise error.AccessDeniedAppError(rpc)
 
-class TLS_device_Thread(threading.Thread):
+class NETCONF_device_Thread(threading.Thread):
     def __init__(self, kwargs=None):
         threading.Thread.__init__(self, kwargs=None)
         self.queue = queue
