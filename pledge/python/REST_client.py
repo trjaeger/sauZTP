@@ -31,9 +31,6 @@ class REST_device_Thread(threading.Thread):
         return fileString
 
     def signString(self, keyFilePath, password, stringToSign, algo):
-        #key_file = open(keyFilePath, "r")
-        #key = key_file.read()
-        #key_file.close()
         key = self.getCertStringfromFile(keyFilePath)
 
         if key.startswith('-----BEGIN '):

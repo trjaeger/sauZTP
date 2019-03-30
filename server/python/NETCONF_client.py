@@ -57,88 +57,6 @@ def verify_certificate_chain(certfile, chain_file):
         print(e)
         return False
 
-
-#validator = CertificateValidator(end_entity_cert)
-#certByteString = OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_TEXT, cert)
-#print (certByteString.decode("utf-8") )
-
-#print("\n\n\n\n\n")
-#print(fileString)
-
-#print (certByteString.decode("utf-8") )
-#print (certByteString)
-
-from pyasn1.type import univ, namedtype, tag
-from pyasn1.codec.der.encoder import encode
-from pyasn1.codec.der.decoder import decode
-import base64
-
-class bootstrapInformation(univ.Sequence):
-   componentType = namedtype.NamedTypes(
-       namedtype.NamedType('id', univ.Integer()),
-       namedtype.NamedType('os-name', univ.OctetString()),
-       namedtype.NamedType('os-version', univ.OctetString()),
-       namedtype.NamedType('download-uri', univ.OctetString()),
-       namedtype.NamedType('hash-algorithm', univ.OctetString()),
-       namedtype.NamedType('hash-value', univ.OctetString()),
-       namedtype.NamedType('configuration-handling', univ.OctetString()),
-       namedtype.NamedType('pre-configuration-script', univ.OctetString()),
-       namedtype.NamedType('configuration', univ.OctetString()),
-       namedtype.NamedType('post-configuration-script', univ.OctetString())
-   )
-
-bootstrapArtifact = {
-    "bootstrap−information" : {
-        "id": '123',
-        "boot-image": {
-            "name": 'IOS XE',
-            "os-version": '16.6.6',
-            "download-uri": 'IOS XE',
-            "verification": {
-                "hash-algorithm": 'SHA-256',
-                "hash-value": '123456ABCD',
-            }
-            },
-        "configuration-handling": 'IOS XE',
-        "pre-configuration-script": {
-            "filename": 'pre.py',
-            "interpreter": 'python',
-            "download-uri": 'www.fileserver.controlware.de/pre.py',
-            "verification": {
-                "hash-algorithm": 'SHA-256',
-                "hash-value": '123456ABCD',
-            }
-        },
-        "configuration": 'IOS XE',
-        "post-configuration-script": {
-            "filename": 'post.py',
-            "interpreter": 'python',
-            "download-uri": 'www.fileserver.controlware.de/post.py',
-            "verification": {
-                "hash-algorithm": 'SHA-256',
-                "hash-value": '123456ABCD',
-            }
-        }
-    }
-}
-bytebootstrapArtifact = dumps(bootstrapArtifact)
-print(bytebootstrapArtifact)
-
-#print(loads(bytebootstrapArtifact))
-
-asnString = encode(zKey)
-#logging.info (type(asnString), str(asnString))
-
-from base64 import (
-    b64encode,
-    b64decode,
-)
-
-from Crypto.Hash import SHA256
-from Crypto.Signature import PKCS1_v1_5
-from Crypto.PublicKey import RSA
-
-
 def signString(keyFilePath, password, stringToSign, algo):
     key_file = open(keyFilePath, "r")
     key = key_file.read()
@@ -166,142 +84,142 @@ def verifyString(certFilePath, sign, stringToVerify, algo):
         print(e)
         print("verify failed")
         return False
+#validator = CertificateValidator(end_entity_cert)
+#certByteString = OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_TEXT, cert)
+#print (certByteString.decode("utf-8") )
 
+#print("\n\n\n\n\n")
+#print(fileString)
 
+#print (certByteString.decode("utf-8") )
+#print (certByteString)
 
-nsmap_add("sys", "urn:ietf:params:xml:ns:yang:ietf-system")
-MODEL_NS = "urn:my-urn:my-model"
-nsmap_add('pfx', MODEL_NS)
+from pyasn1.type import univ, namedtype, tag
+from pyasn1.codec.der.encoder import encode
+from pyasn1.codec.der.decoder import decode
+import base64
 
-keyFileToSend = "python/cwCA/intermediate/certs/www.ap.controlware.com.cert.pem"
-privateKeyFile = "/usr/src/app/python/vendorCA/intermediate/private/www.ownership.vendor1.com.key.pem"
+def buildbootstrapArtifact():
+    bootstrapArtifact = {
+        "bootstrap−information" : {
+            "id": '123',
+            "boot-image": {
+                "name": 'IOS XE',
+                "os-version": '16.6.6',
+                "download-uri": 'IOS XE',
+                "verification": {
+                    "hash-algorithm": 'SHA-256',
+                    "hash-value": '123456ABCD',
+                }
+                },
+            "configuration-handling": 'IOS XE',
+            "pre-configuration-script": {
+                "filename": 'pre.py',
+                "interpreter": 'python',
+                "download-uri": 'www.fileserver.controlware.de/pre.py',
+                "verification": {
+                    "hash-algorithm": 'SHA-256',
+                    "hash-value": '123456ABCD',
+                }
+            },
+            "configuration": 'IOS XE',
+            "post-configuration-script": {
+                "filename": 'post.py',
+                "interpreter": 'python',
+                "download-uri": 'www.fileserver.controlware.de/post.py',
+                "verification": {
+                    "hash-algorithm": 'SHA-256',
+                    "hash-value": '123456ABCD',
+                }
+            }
+        }
+    }
+    return dumps(bootstrapArtifact)
+    #bytebootstrapArtifact = dumps(bootstrapArtifact)
+    #print(bytebootstrapArtifact)
 
-fileString = getCertStringfromFile(keyFileToSend)
-
-sign = signString (privateKeyFile ,b"password", fileString.encode('ascii'), "sha256" )
-
-#Encode signature so it can be send as a string
-sign_base64 = base64.b64encode(sign)
-utf8Signature = sign_base64.decode('utf-8')
-ownershipRPC = util.elm("ownership")
-cert = OpenSSL.crypto.load_certificate(
-    OpenSSL.crypto.FILETYPE_PEM,
-    getCertStringfromFile('/usr/src/app/python/vendorCA/intermediate/certs/www.ownership.vendor1.com.cert.pem')
+from base64 import (
+    b64encode,
+    b64decode,
 )
-#if verifyString(cert, sign, fileString.encode('ascii'),"sha256"):
-if verifyString('/usr/src/app/python/vendorCA/intermediate/certs/www.ownership.vendor1.com.cert.pem', sign, fileString.encode('ascii'),"sha256"):
-    ownerCertificate = util.subelm(ownershipRPC, "ownerCertificate")
-    ownerCertificate.append(util.leaf_elm("certificate", fileString))
-    #ownerCertificate.append(util.leaf_elm("certificateSignature", sign_base64))
-    ownerCertificate.append(util.leaf_elm("certificateSignature", utf8Signature))
 
-bootstrapRPC = util.elm("bootstrap")
-bootInfo  = util.subelm(bootstrapRPC, "bootInfo")
-
-#bootInfo_base64 = base64.b64encode(asnString)
-bootInfo_base64 = base64.b64encode(bytebootstrapArtifact)
-utf8BootInfo = bootInfo_base64.decode('utf-8')
-
-privateKeyFile = "/usr/src/app/python/cwCA/intermediate/private/www.ap.controlware.com.key.pem"
-sign = signString (privateKeyFile ,b"password", utf8BootInfo.encode('ascii'), "sha256" )
-sign_base64 = base64.b64encode(sign)
-utf8Signature = sign_base64.decode('utf-8')
-
-bootInfo.append(util.leaf_elm("bootInfoASN", utf8BootInfo))
-
-if verifyString('/usr/src/app/python/cwCA/intermediate/certs/www.ap.controlware.com.cert.pem', sign, utf8BootInfo.encode('ascii'),"sha256"):
-    bootInfo.append(util.leaf_elm("bootInfoSignature", utf8Signature))
-
-#TODO: not hardcode
-session = NetconfSSHSession("172.20.0.2", "8300", "admin", "admin", debug=True)
-root, reply, replystring = session.send_rpc(ownershipRPC)
-root, reply, replystring = session.send_rpc(bootstrapRPC)
-session.close()
+from Crypto.Hash import SHA256
+from Crypto.Signature import PKCS1_v1_5
+from Crypto.PublicKey import RSA
 
 
 
-dataElem = reply.find("nc:data", namespaces=NSMAP)
-x = dataElem.find("nc:result", namespaces=NSMAP)
-if x is not None:
-    print(x.text)
-else:
-    print("not found")
+
+
+def main(args):
+
+    if not args:
+        return
+    #print(type(args))
+    #return
+
+    #TODO: check if args is a valid IP
+
+    nsmap_add("sys", "urn:ietf:params:xml:ns:yang:ietf-system")
+    MODEL_NS = "urn:my-urn:my-model"
+    nsmap_add('pfx', MODEL_NS)
+
+    keyFileToSend = "python/cwCA/intermediate/certs/www.ap.controlware.com.cert.pem"
+    privateKeyFile = "/usr/src/app/python/vendorCA/intermediate/private/www.ownership.vendor1.com.key.pem"
+
+    fileString = getCertStringfromFile(keyFileToSend)
+
+    sign = signString (privateKeyFile ,b"password", fileString.encode('ascii'), "sha256" )
+
+    #Encode signature so it can be send as a string
+    sign_base64 = base64.b64encode(sign)
+    utf8Signature = sign_base64.decode('utf-8')
+    ownershipRPC = util.elm("ownership")
+    cert = OpenSSL.crypto.load_certificate(
+        OpenSSL.crypto.FILETYPE_PEM,
+        getCertStringfromFile('/usr/src/app/python/vendorCA/intermediate/certs/www.ownership.vendor1.com.cert.pem')
+    )
+    #if verifyString(cert, sign, fileString.encode('ascii'),"sha256"):
+    if verifyString('/usr/src/app/python/vendorCA/intermediate/certs/www.ownership.vendor1.com.cert.pem', sign, fileString.encode('ascii'),"sha256"):
+        ownerCertificate = util.subelm(ownershipRPC, "ownerCertificate")
+        ownerCertificate.append(util.leaf_elm("certificate", fileString))
+        #ownerCertificate.append(util.leaf_elm("certificateSignature", sign_base64))
+        ownerCertificate.append(util.leaf_elm("certificateSignature", utf8Signature))
+
+    bootstrapRPC = util.elm("bootstrap")
+    bootInfo  = util.subelm(bootstrapRPC, "bootInfo")
+
+    #bootInfo_base64 = base64.b64encode(asnString)
+    bytebootstrapArtifact = buildbootstrapArtifact()
+    bootInfo_base64 = base64.b64encode(bytebootstrapArtifact)
+    utf8BootInfo = bootInfo_base64.decode('utf-8')
+
+    privateKeyFile = "/usr/src/app/python/cwCA/intermediate/private/www.ap.controlware.com.key.pem"
+    sign = signString (privateKeyFile ,b"password", utf8BootInfo.encode('ascii'), "sha256" )
+    sign_base64 = base64.b64encode(sign)
+    utf8Signature = sign_base64.decode('utf-8')
+
+    bootInfo.append(util.leaf_elm("bootInfoASN", utf8BootInfo))
+
+    if verifyString('/usr/src/app/python/cwCA/intermediate/certs/www.ap.controlware.com.cert.pem', sign, utf8BootInfo.encode('ascii'),"sha256"):
+        bootInfo.append(util.leaf_elm("bootInfoSignature", utf8Signature))
+
+    #TODO: not hardcode
+    session = NetconfSSHSession(args, "8300", "admin", "admin", debug=True)
+    root, reply, replystring = session.send_rpc(ownershipRPC)
+    root, reply, replystring = session.send_rpc(bootstrapRPC)
+    session.close()
 
 
 
-exit()
-#datanode = util.elm("datasdaa")
-#x = util.filter_list_iter(inputnode, reply)
-#print(x)
-#print (etree.tounicode(resultnode))
+    dataElem = reply.find("nc:data", namespaces=NSMAP)
+    x = dataElem.find("nc:result", namespaces=NSMAP)
+    if x is not None:
+        print(x.text)
+    else:
+        print("not found")
 
-exit()
-xml = etree.tounicode(root)
-print (xml)
-xml = re.sub(' xmlns="[^"]+"', '', xml, count=1)
-#data = etree.fromstring(xml.replace(' ', '').replace('\n', ''))
-data = etree.fromstring(xml)
-for devs in data.iter('result'):
-    print(devs.text)
-
-print("\n\n")
-"""
-data = util.elm("nc:data")
-sysc = util.subelm(data, "sys:system")
-sysc.append(util.leaf_elm("sys:hostname", "test"))
-#print(etree.tounicode(data))
-
-print(NSMAP)
-xml = etree.tounicode(root)
-#print (xml)
-path = './/nc:*/*/pfx:result'
-
-t = root.xpath('pfx:result', namespaces=NSMAP)
-print(t)
-
-result = util.xpath_filter_result(reply, "nc:rpc-reply/nc:data/pfx:result")
-#print (result.tag, result.attrib, result.text )
-print(etree.tounicode(result))
-
-test = root.iterfind(path, namespaces=NSMAP)
-
-#print ("find: ", type(test))
-for i in test:
-    print ("-",i)
-
-test = root.find(path, namespaces=NSMAP)
-print(test)
-test2 = root.findall("path", namespaces=NSMAP)
-print(test2)
-"""
-"""
-data = util.elm("bootstrap")
-
-with open(certfile, 'r') as myfile:
-    fileString=myfile.read()#.replace('\n', '')
-myfile.close()
-
-certInfo = util.subelm(data, "certificate-information")
-certInfo.append(util.leaf_elm("certificate", fileString))
-onboard = util.subelm(data, "onboarding-information")
-
-redirect = util.subelm(data, "redirect-information")
-boots_server = util.subelm(redirect, "bootstrap-server")
-boots_server.append(util.leaf_elm("address", "172.17.0.1"))
-boots_server.append(util.leaf_elm("port", "8300"))
-boots_server.append(util.leaf_elm("trust_anchor", "undefined"))
-
-
-boot_img = util.subelm(onboard, "boot-image")
-boot_img.append(util.leaf_elm("os-name", "IOS"))
-boot_img.append(util.leaf_elm("os-version", "16.8"))
-boot_img.append(util.leaf_elm("download-uri", "tftp://10.0.0.1/files"))
-img_verification = util.subelm(boot_img, "image-verification")
-img_verification.append(util.leaf_elm("hash-algorithm", "md5"))
-img_verification.append(util.leaf_elm("hash-value", "12345678"))
-
-onboard.append(util.leaf_elm("configuration-handling", "append"))
-onboard.append(util.leaf_elm("pre-configuration-script", "pre.py"))
-onboard.append(util.leaf_elm("configuration", "tbd"))
-onboard.append(util.leaf_elm("post-configuration-script", "post.py"))
-"""
+if __name__ == '__main__':
+    import sys
+    print(sys.argv[1:])
+    #main(sys.argv[1:])

@@ -30,15 +30,17 @@ def main(args):
     connectCandidates = []
     graspDiscoverQueue = Queue()
     tlsConnectionQueue = Queue()
-    #threads.append(GRASP_device.GRASP_device_Thread(graspDiscoverQueue, ))
+    threads.append(grasp_device.GRASP_device_Thread(graspDiscoverQueue, ))
     #threads.append(TLS_client.TLS_device_Thread(tlsConnectionQueue, ))
-    #threads.append(NETCONF_server.NETCONF_device_Thread())
+
+    threads.append(NETCONF_server.NETCONF_device_Thread())
     threads.append(REST_client.REST_device_Thread(tlsConnectionQueue))
+
 
     for t in threads:
         t.start()
 
-    tlsConnectionQueue.put('172.20.0.3')
+    #tlsConnectionQueue.put('172.20.0.3')
     while(True):
 
         """

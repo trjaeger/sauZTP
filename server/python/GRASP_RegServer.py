@@ -26,6 +26,13 @@ except:
 # and flood cache
 ###################################
 
+"""
+helper funktion to get your own IP
+maybe there is a better way or maybe it should be configured
+"""
+def findOwnIPv4():
+    return socket.gethostbyname(socket.gethostname())
+
 def dump_some():
     grasp.tprint("Objective registry contents:")
     for x in grasp._obj_registry:
@@ -131,7 +138,8 @@ def main(args):
 
     ipv4_port = 80
     ipv4_proto = socket.IPPROTO_TCP
-    ipv4_address = '172.2.13.0' #grasp._my_address # current address determined by GRASP kernel
+    #ipv4_address = '172.2.13.0' #grasp._my_address # current address determined by GRASP kernel
+    ipv4_address = findOwnIPv4() # current address determined by GRASP kernel
 
     ####################################
     # Construct a correponding GRASP ASA locator
