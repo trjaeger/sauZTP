@@ -1,21 +1,5 @@
 # -*- coding: utf-8 eval: (yapf-mode 1) -*-
-# February 24 2018, Christian Hopps <chopps@gmail.com>
-#
-# Copyright (c) 2018, Deutsche Telekom AG.
-# All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
+
 from __future__ import absolute_import, division, unicode_literals, print_function, nested_scopes
 import argparse
 import datetime
@@ -34,29 +18,8 @@ from lxml import etree
 import OpenSSL.crypto
 import os
 import base64
-from base64 import (
-    b64encode,
-    b64decode,
-)
 
-from pyasn1.type import univ, namedtype, tag
-from pyasn1.codec.der.encoder import encode
-from pyasn1.codec.der.decoder import decode
-import base64
-
-class bootstrapInformation(univ.Sequence):
-   componentType = namedtype.NamedTypes(
-       namedtype.NamedType('id', univ.Integer()),
-       namedtype.NamedType('os-name', univ.OctetString()),
-       namedtype.NamedType('os-version', univ.OctetString()),
-       namedtype.NamedType('download-uri', univ.OctetString()),
-       namedtype.NamedType('hash-algorithm', univ.OctetString()),
-       namedtype.NamedType('hash-value', univ.OctetString()),
-       namedtype.NamedType('configuration-handling', univ.OctetString()),
-       namedtype.NamedType('pre-configuration-script', univ.OctetString()),
-       namedtype.NamedType('configuration', univ.OctetString()),
-       namedtype.NamedType('post-configuration-script', univ.OctetString())
-   )
+from cbor import dumps, loads #cbor
 
 
 nsmap_add("sys", "urn:ietf:params:xml:ns:yang:ietf-system")
@@ -98,9 +61,18 @@ def date_time_string(dt):
     return s
 
 def doBootstrap(bootparam_base64):
-    bootparam = base64.b64decode(bootparam_base64)
-    print(bootparam_base64)
-    print(type(bootparam))
+    #bootInfo_base64 = base64.b64encode(bytebootstrapArtifact)
+    #utf8BootInfo = bootInfo_base64.decode('utf-8')
+    bytebootstrapArtifact = base64.b64decode(bootparam_base64)
+    #bytebootstrapArtifact = bytebootstrapArtifact.encode('utf-8')
+    print(loads(bytebootstrapArtifact))
+    #print(bytebootstrapArtifact)
+    print(type(bootparam_base64))
+
+    return
+    #bootparam = base64.b64decode(bootparam_base64)
+    #print(bootparam_base64)
+    #print(type(bootparam))
 
     received_record, _ = decode(bootparam, asn1Spec=bootstrapInformation())
     for field in received_record:
@@ -113,7 +85,7 @@ class SystemServer(object):
         self.server = server.NetconfSSHServer(auth, self, port, host_key, debug)
         self.manufacturerCert = OpenSSL.crypto.load_certificate(
             OpenSSL.crypto.FILETYPE_PEM,
-            getCertStringfromFile('/usr/src/app/vendorCert/www.ownership.vendor1.com.cert.pem')
+            getCertStringfromFile('/usr/src/app/python/vendorCA/intermediate/certs/www.ownership.vendor1.com.cert.pem')
         )
         self.ownerCertificate = None
 
@@ -270,7 +242,7 @@ def main(*margs):
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.WARNING)
 
     args.password = parse_password_arg(args.password)
-    host_key = os.path.dirname(__file__) + "/server-key"
+    host_key = os.path.dirname(__file__) + "/serverkeys/server-key"
 
     auth = server.SSHUserPassController(username=args.username, password=args.password)
     s = SystemServer(args.port, host_key, auth, args.debug)
@@ -284,7 +256,6 @@ def main(*margs):
         print("quitting server")
 
     s.close()
-
 
 if __name__ == "__main__":
     main()

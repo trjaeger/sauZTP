@@ -99,16 +99,8 @@ def getCertStringfromFile(filepath):
 @app.route('/requestvoucher',methods=['POST'])
 def voucher():
 
-    #print(request.data)
-    #print(request.args.get('summary'))
-    #print(request.args)
+    print(request.remote_addr)
 
-    #jsonstring = request.data.decode('utf8').replace("'", '"')
-    #data = json.loads(jsonstring)
-    #print(json.dumps(data, indent=4))
-
-    #print(request.values)
-    #print(request.form['summary'])
     tmp_voucher = loads(request.data)
     #print(type(test), test)
     if 'voucher-request' not in tmp_voucher:

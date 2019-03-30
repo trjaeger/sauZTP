@@ -1,3 +1,6 @@
+# -*- coding: utf-8 eval: (yapf-mode 1) -*-
+
+
 #client for netconf
 from netconf.client import NetconfSSHSession
 from lxml import etree
@@ -6,9 +9,10 @@ from netconf import nsmap_add, nsmap_update
 from netconf import NSMAP
 import logging
 import re
-#print(cert.serial_number)
-#print(cert)
-#print("\n\n\n\n\n")
+
+from cbor import dumps, loads #cbor
+
+
 certfile = '/usr/src/app/ca/8021ARintermediate/certs/Device1234.cert.pem'
 
 logging.basicConfig(level=logging.INFO)
@@ -83,18 +87,44 @@ class bootstrapInformation(univ.Sequence):
        namedtype.NamedType('post-configuration-script', univ.OctetString())
    )
 
-zKey = bootstrapInformation()
-zKey['id'] = 123
-zKey['os-name'] = 'IOS XE'
-zKey['os-version'] = '16.6.6'
-zKey['download-uri'] = "www.fileserver.controlware.de"
-zKey['hash-algorithm'] = 'md5'
-zKey['hash-value'] = '123456'
-zKey['configuration-handling'] = 'merge'
-zKey['pre-configuration-script'] = 'pre.py'
-zKey['configuration'] = 'tbd'
-zKey['post-configuration-script'] = 'post.py'
+bootstrapArtifact = {
+    "bootstrap−information" : {
+        "id": '123',
+        "boot-image": {
+            "name": 'IOS XE',
+            "os-version": '16.6.6',
+            "download-uri": 'IOS XE',
+            "verification": {
+                "hash-algorithm": 'SHA-256',
+                "hash-value": '123456ABCD',
+            }
+            },
+        "configuration-handling": 'IOS XE',
+        "pre-configuration-script": {
+            "filename": 'pre.py',
+            "interpreter": 'python',
+            "download-uri": 'www.fileserver.controlware.de/pre.py',
+            "verification": {
+                "hash-algorithm": 'SHA-256',
+                "hash-value": '123456ABCD',
+            }
+        },
+        "configuration": 'IOS XE',
+        "post-configuration-script": {
+            "filename": 'post.py',
+            "interpreter": 'python',
+            "download-uri": 'www.fileserver.controlware.de/post.py',
+            "verification": {
+                "hash-algorithm": 'SHA-256',
+                "hash-value": '123456ABCD',
+            }
+        }
+    }
+}
+bytebootstrapArtifact = dumps(bootstrapArtifact)
+print(bytebootstrapArtifact)
 
+#print(loads(bytebootstrapArtifact))
 
 asnString = encode(zKey)
 #logging.info (type(asnString), str(asnString))
@@ -108,11 +138,6 @@ from Crypto.Hash import SHA256
 from Crypto.Signature import PKCS1_v1_5
 from Crypto.PublicKey import RSA
 
-
-#pubKey = cert.get_pubkey()
-#pubKeyString = OpenSSL.crypto.dump_publickey(OpenSSL.crypto.FILETYPE_PEM,pubKey)
-
-#print(type(cert))
 
 def signString(keyFilePath, password, stringToSign, algo):
     key_file = open(keyFilePath, "r")
@@ -142,37 +167,11 @@ def verifyString(certFilePath, sign, stringToVerify, algo):
         print("verify failed")
         return False
 
-def test():
-    chain_file = '/usr/src/app/ca/certs/ca.cert.pem'
-    chain_file = '/usr/src/app/ca/8021ARintermediate/certs/ca-chain.cert.pem'
-    result = verify_certificate_chain(certfile ,chain_file)
-    if result:
-        logging.info('Certificate validated')
-    #exit()
-
-    cert = OpenSSL.crypto.load_certificate(
-          OpenSSL.crypto.FILETYPE_PEM,
-          getCertStringfromFile(certfile)
-    )
 
 
-    sign = signString ("/usr/src/app/python/cwCA/intermediate/private/intermediate.key.pem",b"password", substrate, "sha256" )
-    verifyString('/usr/src/app/python/cwCA/intermediate/certs/intermediate.cert.pem', sign, substrate,"sha256")
-
-received_record, _ = decode(asnString, asn1Spec=bootstrapInformation())
-#print (type(received_record))
-#print ("received: ", received_record)
-for field in received_record:
-    print('{:>25} - {:<}'.format(field, str(received_record[field])))
-
-#print(base64.encodebytes(substrate))
-
-
-#exit()
 nsmap_add("sys", "urn:ietf:params:xml:ns:yang:ietf-system")
 MODEL_NS = "urn:my-urn:my-model"
 nsmap_add('pfx', MODEL_NS)
-#nsmap_update({'pfx': MODEL_NS})
 
 keyFileToSend = "python/cwCA/intermediate/certs/www.ap.controlware.com.cert.pem"
 privateKeyFile = "/usr/src/app/python/vendorCA/intermediate/private/www.ownership.vendor1.com.key.pem"
@@ -189,19 +188,18 @@ cert = OpenSSL.crypto.load_certificate(
     OpenSSL.crypto.FILETYPE_PEM,
     getCertStringfromFile('/usr/src/app/python/vendorCA/intermediate/certs/www.ownership.vendor1.com.cert.pem')
 )
-if verifyString(cert, sign, fileString.encode('ascii'),"sha256"):
-#if verifyString('/usr/src/app/python/vendorCA/intermediate/certs/www.ownership.vendor1.com.cert.pem', sign, fileString.encode('ascii'),"sha256"):
+#if verifyString(cert, sign, fileString.encode('ascii'),"sha256"):
+if verifyString('/usr/src/app/python/vendorCA/intermediate/certs/www.ownership.vendor1.com.cert.pem', sign, fileString.encode('ascii'),"sha256"):
     ownerCertificate = util.subelm(ownershipRPC, "ownerCertificate")
     ownerCertificate.append(util.leaf_elm("certificate", fileString))
     #ownerCertificate.append(util.leaf_elm("certificateSignature", sign_base64))
     ownerCertificate.append(util.leaf_elm("certificateSignature", utf8Signature))
 
-#print(etree.tounicode(ownershipRPC, pretty_print=True))
-#exit()
-
 bootstrapRPC = util.elm("bootstrap")
 bootInfo  = util.subelm(bootstrapRPC, "bootInfo")
-bootInfo_base64 = base64.b64encode(asnString)
+
+#bootInfo_base64 = base64.b64encode(asnString)
+bootInfo_base64 = base64.b64encode(bytebootstrapArtifact)
 utf8BootInfo = bootInfo_base64.decode('utf-8')
 
 privateKeyFile = "/usr/src/app/python/cwCA/intermediate/private/www.ap.controlware.com.key.pem"
@@ -215,7 +213,7 @@ if verifyString('/usr/src/app/python/cwCA/intermediate/certs/www.ap.controlware.
     bootInfo.append(util.leaf_elm("bootInfoSignature", utf8Signature))
 
 #TODO: not hardcode
-session = NetconfSSHSession("172.17.0.3", "8300", "admin", "admin", debug=True)
+session = NetconfSSHSession("172.20.0.2", "8300", "admin", "admin", debug=True)
 root, reply, replystring = session.send_rpc(ownershipRPC)
 root, reply, replystring = session.send_rpc(bootstrapRPC)
 session.close()
@@ -229,17 +227,7 @@ if x is not None:
 else:
     print("not found")
 
-'''
-print("\n")
-f = reply.xpath("//nc:data/nc:result", namespaces=NSMAP )
-#print(f, type(f))
-for ff in f:
-    print(ff.text)
-'''
-'''
-for e in root.iter():
-    print (e.text)
-'''
+
 
 exit()
 #datanode = util.elm("datasdaa")
