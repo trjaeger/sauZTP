@@ -1,18 +1,18 @@
 # Pledge
-Simulates a device completing bootsequence and waiting for bootstrap.
+Simulates a device completing boot sequence and waiting for bootstrap.
 
 # Python
 Contains all the code and lots of file snot used anymore.
 Also contains some of the certificates used for several functions.
 I will clean this up soon.
 ## deviceMain.py
-The main programm of the device.
+The main program of the device.
 All functions are implemented as different threads launched by this file.
-Communications is realised using queues.
+Communications is realized using queues.
 
 ## GRASP_device.py
-Waits for incoming messages of containing a proxy or registrar advertisment.
-Signals the address back to the main programm.
+Waits for incoming messages of containing a proxy or registrar advertisement.
+Signals the address back to the main program.
 
 ## REST_client.py
 Takes the address from the GRASP service and sends out a voucher request.
